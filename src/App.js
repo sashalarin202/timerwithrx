@@ -1,25 +1,62 @@
-import logo from './logo.svg';
 import './App.css';
+import React, { useEffect, useState, useCallback } from 'react';
+import { interval, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-function App() {
+export default function App() {
+  const [sec, setSec] = useState(0);
+  const [status, setStatus] = useState('stop');
+
+  useEffect(() => {
+    const unsubscribe$ = new Subject();
+
+    interval(1000)
+      .pipe(takeUntil(unsubscribe$))
+      .subscribe(() => {
+        if (status === 'run') {
+          setSec(val => val + 1000);
+        }
+      });
+
+    return () => {
+      unsubscribe$.next();
+
+      unsubscribe$.complete();
+    };
+  }, [status]);
+
+  const start = useCallback(() => {
+    setStatus('run');
+  }, []);
+
+  const stop = useCallback(() => {
+    setStatus('stop');
+    setSec(0);
+  }, []);
+
+  const reset = useCallback(() => {
+    setSec(0);
+  }, []);
+
+  const wait = useCallback(() => {
+    setStatus('wait');
+  }, []);
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <span className="clock">
+        {new Date(sec).toISOString().slice(11, 19)}
+      </span>
+      <section>
+        <button type="button" className="start-button" onClick={start}>
+          Start
+        </button>
+        <button type="button" className="stop-button" onClick={stop}>
+          Stop
+        </button>
+        <button type="button" onClick={reset}>Reset</button>
+        <button type="button" onDoubleClick={wait}>Wait</button>
+      </section>
     </div>
   );
 }
-
-export default App;
